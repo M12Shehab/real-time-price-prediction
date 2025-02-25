@@ -1,0 +1,20 @@
+services:
+  backend:
+    build: ./backend
+    container_name: stock-prediction-backend
+    ports:
+      - "8000:8000"
+    restart: always
+    environment:
+      - REACT_APP_BACKEND_URL=http://backend:8000
+
+  frontend:
+    build: ./frontend
+    container_name: stock-prediction-frontend
+    ports:
+      - "3000:80" # Exposes frontend on port 3000
+    depends_on:
+      - backend
+    restart: always
+    environment:
+      - REACT_APP_BACKEND_URL=http://backend:8000
