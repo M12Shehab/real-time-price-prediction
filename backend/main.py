@@ -1,3 +1,6 @@
+"""Main FastAPI application.
+    Author: Mohammed Shehab
+"""
 from fastapi import FastAPI
 from services.prediction import get_prediction
 from fastapi.middleware.cors import CORSMiddleware

@@ -1,3 +1,7 @@
+"""The prediction service module for making stock price predictions
+    using real-time data and trained models.
+    Author: Mohammed Shehab    
+"""
 import joblib
 import numpy as np
 # import pandas as pd

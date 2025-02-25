@@ -1,3 +1,7 @@
+"""Random Forest Model for Stock Price Prediction
+This script trains a Random Forest model on historical stock data to predict future stock prices.
+Author: Mohammed Shehab
+"""
 import yfinance as yf
 import pandas as pd
 import joblib

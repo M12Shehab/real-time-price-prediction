@@ -1,4 +1,7 @@
-import yfinance as yf
+"""Linear Regression Model for Stock Price Prediction
+This script trains a Linear model on historical stock data to predict future stock prices.
+Author: Mohammed Shehab
+"""
 import pandas as pd
 import joblib
 import os
