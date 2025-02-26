@@ -11,7 +11,7 @@ app = FastAPI()
 # Enable CORS (Allow frontend requests)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],  # Only allow frontend requests
+    allow_origins=["*"],  # Only allow frontend requests
     allow_credentials=True,
     allow_methods=["*"],  # Allow all HTTP methods
     allow_headers=["*"],  # Allow all headers
@@ -19,7 +19,13 @@ app.add_middleware(
 
 @app.get("/")
 def home():
-    return {"message": "Welcome to the Stock Price Prediction API!"}
+    return {"message": "Welcome to the Stock Price Prediction API!",
+            "Author": "Mohammed Shehab",
+            "version":"1.0.0",
+            "Github":"https://github.com/M12Shehab/Stock-Price-Prediction-API",
+            "LinkedIn":"https://www.linkedin.com/in/mohammed-shehab/",
+            "Note":"This API is for educational purposes only. Do not use this for real trading.",
+            "Project Home page":"https://realtime-frontend.eastus.azurecontainer.io"}
 
 @app.get("/predict/{ticker}")
 def predict_stock(ticker: str):
