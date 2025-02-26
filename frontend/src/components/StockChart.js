@@ -61,7 +61,7 @@ const StockChart = ({ ticker }) => {
                         },
                         {
                             label: "Xgboost Prediction",
-                            data: [...(prev ? prev.datasets[2].data : []), data.predictions.xgboost],
+                            data: [...(prev ? prev.datasets[3].data : []), data.predictions.xgboost],
                             borderColor: "green",
                             borderWidth: 2,
                             fill: false,
