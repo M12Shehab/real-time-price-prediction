@@ -5,8 +5,6 @@ services:
     ports:
       - "8000:8000"
     restart: always
-    environment:
-      - REACT_APP_BACKEND_URL=http://backend:8000
 
   frontend:
     image: realtimesys.azurecr.io/frontend:latest
@@ -17,4 +15,4 @@ services:
       - backend
     restart: always
     environment:
-      - REACT_APP_BACKEND_URL=http://backend:8000
+      - REACT_APP_BACKEND_URL=http://realtime-backend.eastus.azurecontainer.io:8000

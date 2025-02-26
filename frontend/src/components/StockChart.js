@@ -19,12 +19,13 @@ ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, T
 const StockChart = ({ ticker }) => {
     const [chartData, setChartData] = useState(null);
     const [error, setError] = useState(null);
+    const API_URL = process.env.REACT_APP_BACKEND_URL || "http://realtime-backend.eastus.azurecontainer.io:8000";
 
     useEffect(() => {
         const fetchData = async () => {
             try {
                 console.log(`Fetching data for ${ticker}...`);
-                const response = await axios.get(`http://localhost:8000/predict/${ticker}`);
+                const response = await axios.get(`${API_URL}/predict/${ticker}`);
                 console.log("API Response:", response.data);
 
                 const data = response.data;
