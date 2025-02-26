@@ -39,3 +39,41 @@ jobs:
         run: |
           docker build -t ${{ secrets.ACR_LOGIN_SERVER }}/frontend:latest ./frontend
           docker push ${{ secrets.ACR_LOGIN_SERVER }}/frontend:latest
+
+  deploy-to-aci:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Log in to Azure
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Deploy Backend to Azure Container Instances (ACI)
+        uses: azure/aci-deploy@v1
+        with:
+          resource-group: ${{ secrets.RESOURCE_GROUP }}
+          dns-name-label: realtime-backend
+          image: ${{ secrets.ACR_LOGIN_SERVER }}/backend:latest
+          registry-login-server: ${{ secrets.ACR_LOGIN_SERVER }}
+          registry-username: ${{ secrets.ACR_USERNAME }}
+          registry-password: ${{ secrets.ACR_PASSWORD }}
+          name: realtime-backend
+          location: eastus
+          ports: "8000"
+
+      - name: Deploy Frontend to Azure Container Instances (ACI)
+        uses: azure/aci-deploy@v1
+        with:
+          resource-group: ${{ secrets.RESOURCE_GROUP }}
+          dns-name-label: realtime-frontend
+          image: ${{ secrets.ACR_LOGIN_SERVER }}/frontend:latest
+          registry-login-server: ${{ secrets.ACR_LOGIN_SERVER }}
+          registry-username: ${{ secrets.ACR_USERNAME }}
+          registry-password: ${{ secrets.ACR_PASSWORD }}
+          name: realtime-frontend
+          location: eastus
+          ports: "80"
