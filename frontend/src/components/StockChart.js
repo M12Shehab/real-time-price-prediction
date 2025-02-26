@@ -58,6 +58,13 @@ const StockChart = ({ ticker }) => {
                             borderWidth: 2,
                             fill: false,
                         },
+                        {
+                            label: "Decision Tree Prediction",
+                            data: [...(prev ? prev.datasets[2].data : []), data.predictions.decision_tree],
+                            borderColor: "green",
+                            borderWidth: 2,
+                            fill: false,
+                        },
                     ],
                 }));
             } catch (err) {

@@ -20,6 +20,7 @@ COPY data/*.csv /app/data/
 # Run training scripts for Linear Regression & Random Forest models
 RUN python services/lr_model.py
 RUN python services/rf_model.py
+RUN python services/dt_model.py
 
 # Expose FastAPI port
 EXPOSE 8000
