@@ -60,8 +60,8 @@ const StockChart = ({ ticker }) => {
                             fill: false,
                         },
                         {
-                            label: "Decision Tree Prediction",
-                            data: [...(prev ? prev.datasets[2].data : []), data.predictions.decision_tree],
+                            label: "Xgboost Prediction",
+                            data: [...(prev ? prev.datasets[2].data : []), data.predictions.xgboost],
                             borderColor: "green",
                             borderWidth: 2,
                             fill: false,

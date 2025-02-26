@@ -11,7 +11,7 @@ import yfinance as yf
 # Load trained models & scaler
 lr_model = joblib.load("./models/lr_all_model.pkl")
 rf_model = joblib.load("./models/rf_all_model.pkl")
-dt_model = joblib.load("./models/dt_all_model.pkl")
+xgb_model = joblib.load("./models/xgb_all_model.pkl")
 scaler = joblib.load("./models/all_scaler.pkl")
 
 # app = FastAPI()
@@ -61,7 +61,7 @@ def predict_price(ticker="AAPL"):
     # Make predictions
     lr_pred_scaled = lr_model.predict(features_scaled)[0]
     rf_pred_scaled = rf_model.predict(features_scaled)[0]
-    dt_pred_scaled = dt_model.predict(features_scaled)[0]
+    xgb_pred_scaled = xgb_model.predict(features_scaled)[0]
 
     # Create a full feature array for inverse transformation
     inverse_features = np.zeros((1, 5))  # Must match the number of features used in training
@@ -71,15 +71,15 @@ def predict_price(ticker="AAPL"):
     inverse_features[0, -1] = rf_pred_scaled  # Repeat for RF model
     rf_pred = scaler.inverse_transform(inverse_features)[0][-1]
 
-    inverse_features[0, -1] = dt_pred_scaled  # Repeat for DT model
-    dt_pred = scaler.inverse_transform(inverse_features)[0][-1]
+    inverse_features[0, -1] = xgb_pred_scaled  # Repeat for DT model
+    xgb_pred = scaler.inverse_transform(inverse_features)[0][-1]
 
     return {
         "real_time_data": stock_data,  # Keeps the real closing price format
         "predictions": {
             "linear_regression": round(lr_pred, 2),
             "random_forest": round(rf_pred, 2),
-            "decision_tree": round(dt_pred, 2)
+            "xgboost": round(xgb_pred, 2)
         }
     }
 

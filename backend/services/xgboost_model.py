@@ -1,5 +1,5 @@
-"""Random Forest Model for Stock Price Prediction
-This script trains a Random Forest model on historical stock data to predict future stock prices.
+"""XGBoost Time Series Model for Stock Price Prediction
+This script trains an XGBoost model using TimeSeriesSplit for better time series validation.
 Author: Mohammed Shehab
 """
 import yfinance as yf
@@ -7,10 +7,10 @@ import pandas as pd
 import joblib
 import os
 from sklearn.preprocessing import MinMaxScaler
-from sklearn.model_selection import train_test_split
-from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_squared_error
 import matplotlib.pyplot as plt
+import xgboost as xgb
+from sklearn.model_selection import TimeSeriesSplit
 
 # Todo: update this code before deployment
 # Define directories for models and data in cloud
@@ -41,13 +41,7 @@ def preprocess_stock_data(df):
 def load_stock_data(ticker="AAPL"):
     """Download historical stock data from Yahoo Finance"""
     file_path = f"{data_dir}/{ticker}_stock_data.csv"
-    
-    # if not os.path.exists(file_path):
-    #     print(f"Downloading {ticker} stock data...")
-    #     df = yf.download(ticker, start="2010-01-01", end="2024-01-01")
-    #     os.makedirs(data_dir, exist_ok=True)
-    #     df.to_csv(file_path)
-    # else:
+
     print(f"Loading {ticker} data from local CSV...")
     df = pd.read_csv(file_path, parse_dates=["Date"])
 
@@ -65,60 +59,72 @@ def make_plot(y_test, y_pred):
     plt.ylabel("Price")
     plt.show()
 
-def training_testing(data, ticker, debug=False):
-    """Train a Linear Regression model on stock data"""
-    data = data.sort_index(ascending=True)
-    # Features & Target
-    X = data[features]  # Excluding 'Close' as target
-    y = data[target]  # 'Close' is the target
+def train_xgboost_with_timeseries_split(data, ticker, debug=False, n_splits=5):
+    """Train an XGBoost model using TimeSeriesSplit"""
 
-    # Train/Test Split
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42, shuffle=False)
+    data = data.sort_index(ascending=True)
+
+    # Features & Target
+    X = data[features]
+    y = data[target]
 
     # Feature Scaling
     scaler = MinMaxScaler()
-    X_train_scaled = scaler.fit_transform(X_train)
-    X_test_scaled = scaler.transform(X_test)
+    X_scaled = scaler.fit_transform(X)
 
     # Save the scaler
     os.makedirs(models_dir, exist_ok=True)
     joblib.dump(scaler, f"{models_dir}/{ticker}_scaler.pkl")
 
-    # Train the model
-    rf = RandomForestRegressor(
-                                max_depth=5,
-                               criterion='squared_error',
-                               n_estimators=100,
-                               bootstrap=True,
-                               random_state=42
-                               )
-    rf.fit(X_train_scaled, y_train)
+    # Define TimeSeriesSplit
+    tscv = TimeSeriesSplit(n_splits=n_splits)
 
-    # Evaluate the model
-    y_pred = rf.predict(X_test_scaled)
+    mse_scores = []
 
-    # Calculate the Mean Squared Error
-    mse = mean_squared_error(y_test, y_pred)
-    print(f"Mean Squared Error for {ticker}: {mse:.2f}")
-    print("Training model with all data...")
-    rf.fit(scaler.transform(X), y)
-    print("Model training complete!")
-    print("Saving model...")
+    for train_idx, test_idx in tscv.split(X_scaled):
+        X_train, X_test = X_scaled[train_idx], X_scaled[test_idx]
+        y_train, y_test = y.iloc[train_idx], y.iloc[test_idx]
+
+        # Train the XGBoost Model
+        model = xgb.XGBRegressor(objective="reg:squarederror",
+                                 n_estimators=100,
+                                 max_depth=6,
+                                 learning_rate=0.15,
+                                 subsample=0.8,  # Prevent overfitting
+                                 colsample_bytree=0.8,  # Prevent overfitting
+                                 random_state=42)
+        
+        model.fit(X_train, y_train)
+
+        # Evaluate the model
+        y_pred = model.predict(X_test)
+        mse = mean_squared_error(y_test, y_pred)
+        mse_scores.append(mse)
+        print(f"Fold MSE: {mse:.2f}")
+
+        if debug:
+            make_plot(y_test, y_pred)
+
+    print(f"Average MSE across {n_splits} folds: {sum(mse_scores) / len(mse_scores):.2f}")
+
+    # Train on the full dataset
+    print("Training final model on all data...")
+    model.fit(X_scaled, y)
+    print("Final model training complete!")
+
     # Save the model
-    joblib.dump(rf, f"{models_dir}/rf_{ticker}_model.pkl")
-    print("Model saved!")
-
-    if debug:
-        # Plot results
-        make_plot(y_test, y_pred)
+    joblib.dump(model, f"{models_dir}/xgb_{ticker}_model.pkl")
+    print("Final model saved!")
 
 if __name__ == "__main__":
-    # ticker = "AAPL"
     tickers = ["AAPL", "MSFT", "GOOGL", "AMZN"]
     data_frames = []
+    
     for ticker in tickers:
         raw_data = load_stock_data(ticker)
         data_frames.append(raw_data)
+    
     all_data = pd.concat(data_frames)
     processed_data = preprocess_stock_data(all_data)
-    training_testing(processed_data, "all", debug=False)
+    
+    train_xgboost_with_timeseries_split(processed_data, "all", debug=False, n_splits=5)
