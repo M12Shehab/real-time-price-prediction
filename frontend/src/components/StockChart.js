@@ -40,7 +40,7 @@ const StockChart = ({ ticker }) => {
                     datasets: [
                         {
                             label: "Actual Close Price",
-                            data: [...(prev ? prev.datasets[0].data : []), data.real_time_data.close],
+                            data: [...(prev ? prev.datasets[0].data : []), data.real_time_data.log_return],
                             borderColor: "gold",
                             borderWidth: 2,
                             fill: false,
@@ -74,7 +74,7 @@ const StockChart = ({ ticker }) => {
             }
         };
 
-        const interval = setInterval(fetchData, 20000);
+        const interval = setInterval(fetchData, 5000);
         return () => clearInterval(interval);
     }, [ticker]);
 
