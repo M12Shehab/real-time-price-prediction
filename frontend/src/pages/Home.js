@@ -80,7 +80,7 @@ const Home = () => {
     </p>
 
     <p style={{ fontSize: "16px", maxWidth: "600px", margin: "auto" }}>
-        As a **Lead AI Engineer**, I focus on **scalable AI solutions** and **team leadership**, ensuring AI projects **move from research to production efficiently**.
+        As a <b>Lead AI Engineer</b>, I focus on scalable AI solutions and team leadership, ensuring AI projects move from research to production efficiently.
     </p>
 
     <p style={{ fontSize: "16px", maxWidth: "600px", margin: "auto" }}>
