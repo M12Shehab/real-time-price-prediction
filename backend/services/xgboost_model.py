@@ -2,7 +2,8 @@
 This script trains an XGBoost model using TimeSeriesSplit for better time series validation.
 Author: Mohammed Shehab
 """
-import yfinance as yf
+import numpy as np
+import ta
 import pandas as pd
 import joblib
 import os
@@ -21,7 +22,7 @@ data_dir = "./data"
 # data_dir = "backend/data"
 
 features = ["Volume", "price_change", "momentum", "volatility", "spread"]
-target = "Close"
+target = "log_return" #"Close"
 
 def preprocess_stock_data(df):
     """Preprocess stock data and create new features"""
@@ -32,11 +33,64 @@ def preprocess_stock_data(df):
     df["momentum"] = df["Close"].pct_change()
     df["volatility"] = df["Close"].rolling(5).std()
     df["spread"] = df["High"] - df["Low"]
-
+    df["log_return"] = np.log(df["Close"] / df["Close"].shift(5))  # Log return
     # Fill missing values
     df.fillna(0, inplace=True)
 
     return df
+
+def preprocess_stock_data_advanced(df):
+    """Preprocess stock data and create new features"""
+    df.set_index("Date", inplace=True)
+
+    # Feature Engineering
+    df["price_change"] = (df["Close"] - df["Open"]) / df["Open"]
+    df["momentum"] = df["Close"].pct_change()
+    df["volatility"] = df["Close"].rolling(5).std()
+    df["spread"] = df["High"] - df["Low"]
+    df["log_return"] = np.log(df["Close"] / df["Close"].shift(1))  # Target variable
+
+    # Simple Moving Averages (SMA)
+    df["SMA_10"] = ta.trend.SMAIndicator(df["Close"], window=10).sma_indicator()
+    df["SMA_30"] = ta.trend.SMAIndicator(df["Close"], window=30).sma_indicator()
+
+    # Relative Strength Index (RSI)
+    df["RSI"] = ta.momentum.RSIIndicator(df["Close"], window=14).rsi()
+
+    # MACD (Moving Average Convergence Divergence)
+    macd = ta.trend.MACD(df["Close"], window_slow=26, window_fast=12, window_sign=9)
+    df["MACD"] = macd.macd()
+    df["MACD_Signal"] = macd.macd_signal()
+
+    # Bollinger Bands
+    bb = ta.volatility.BollingerBands(df["Close"], window=20, window_dev=2)
+    df["BB_High"] = bb.bollinger_hband()
+    df["BB_Low"] = bb.bollinger_lband()
+
+    # Momentum Indicators
+    df["ROC"] = ta.momentum.ROCIndicator(df["Close"], window=12).roc()  # Rate of Change
+
+    # Trend Strength
+    df["ADX"] = ta.trend.ADXIndicator(df["High"], df["Low"], df["Close"], window=14).adx()
+
+    # Volatility
+    df["ATR"] = ta.volatility.AverageTrueRange(df["High"], df["Low"], df["Close"], window=14).average_true_range()
+
+    # # Technical Indicators
+    # df["SMA_10"] = ta.SMA(df["Close"], timeperiod=10)
+    # df["SMA_30"] = ta.SMA(df["Close"], timeperiod=30)
+    # df["RSI"] = ta.RSI(df["Close"], timeperiod=14)
+    # df["MACD"], _, _ = ta.MACD(df["Close"], fastperiod=12, slowperiod=26, signalperiod=9)
+    
+    df["log_return"] = np.log(df["Close"] / df["Close"].shift(5))  # Log return
+    # Fill missing values
+    df.fillna(method="ffill", inplace=True)
+    df.dropna(inplace=True)
+    
+
+
+    return df
+
 
 def load_stock_data(ticker="AAPL"):
     """Download historical stock data from Yahoo Finance"""
@@ -89,8 +143,8 @@ def train_xgboost_with_timeseries_split(data, ticker, debug=False, n_splits=5):
         model = xgb.XGBRegressor(objective="reg:squarederror",
                                  n_estimators=100,
                                  max_depth=6,
-                                 learning_rate=0.15,
-                                 subsample=0.8,  # Prevent overfitting
+                                 learning_rate=0.51,
+                                 subsample=0.5,  # Prevent overfitting
                                  colsample_bytree=0.8,  # Prevent overfitting
                                  random_state=42)
         
@@ -118,13 +172,8 @@ def train_xgboost_with_timeseries_split(data, ticker, debug=False, n_splits=5):
 
 if __name__ == "__main__":
     tickers = ["AAPL", "MSFT", "GOOGL", "AMZN"]
-    data_frames = []
+    data_frames = [preprocess_stock_data(load_stock_data(ticker)) for ticker in tickers]
     
-    for ticker in tickers:
-        raw_data = load_stock_data(ticker)
-        data_frames.append(raw_data)
+    all_data = pd.concat(data_frames).sort_values("Date", ascending=True)  # Fix time sorting
     
-    all_data = pd.concat(data_frames)
-    processed_data = preprocess_stock_data(all_data)
-    
-    train_xgboost_with_timeseries_split(processed_data, "all", debug=False, n_splits=5)
+    train_xgboost_with_timeseries_split(all_data, "all", debug=False, n_splits=5)
