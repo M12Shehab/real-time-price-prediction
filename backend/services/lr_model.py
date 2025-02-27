@@ -2,6 +2,7 @@
 This script trains a Linear model on historical stock data to predict future stock prices.
 Author: Mohammed Shehab
 """
+import numpy as np
 import pandas as pd
 import joblib
 import os
@@ -15,8 +16,12 @@ import matplotlib.pyplot as plt
 models_dir = "./models"
 data_dir = "./data"
 
+# # for local testing
+# models_dir = "backend/models"
+# data_dir = "backend/data"
+
 features = ["Volume", "price_change", "momentum", "volatility", "spread"]
-target = "Close"
+target = "log_return" #"Close"
 
 def preprocess_stock_data(df):
     """Preprocess stock data and create new features"""
@@ -27,7 +32,7 @@ def preprocess_stock_data(df):
     df["momentum"] = df["Close"].pct_change()
     df["volatility"] = df["Close"].rolling(5).std()
     df["spread"] = df["High"] - df["Low"]
-
+    df["log_return"] = np.log(df["Close"] / df["Close"].shift(5))  # Log return
     # Fill missing values
     df.fillna(0, inplace=True)
 

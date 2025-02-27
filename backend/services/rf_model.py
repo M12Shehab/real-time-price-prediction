@@ -2,7 +2,7 @@
 This script trains a Random Forest model on historical stock data to predict future stock prices.
 Author: Mohammed Shehab
 """
-import yfinance as yf
+import numpy as np
 import pandas as pd
 import joblib
 import os
@@ -21,7 +21,7 @@ data_dir = "./data"
 # data_dir = "backend/data"
 
 features = ["Volume", "price_change", "momentum", "volatility", "spread"]
-target = "Close"
+target = "log_return" #"Close"
 
 def preprocess_stock_data(df):
     """Preprocess stock data and create new features"""
@@ -32,7 +32,7 @@ def preprocess_stock_data(df):
     df["momentum"] = df["Close"].pct_change()
     df["volatility"] = df["Close"].rolling(5).std()
     df["spread"] = df["High"] - df["Low"]
-
+    df["log_return"] = np.log(df["Close"] / df["Close"].shift(5))  # Log return
     # Fill missing values
     df.fillna(0, inplace=True)
 
